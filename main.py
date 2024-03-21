@@ -48,8 +48,17 @@ while True:
       png_bio = io.BytesIO()
       file.save(png_bio, format="PNG")
       png_data = png_bio.getvalue()
-      window2 = psg.Window("Visualizar Imagem", [[psg.Image(png_data, subsample=2)]], size=(720,480), finalize=True)
-      if event == psg.WIN_CLOSED:
+      window2 = psg.Window("Visualizar Imagem", [[psg.Image(png_data, subsample=2, key="-IMAGE-")],
+                                                 [psg.Button("Zoom In", key="-ZOOM IN-")]
+                                                 ], size=(720,480), finalize=True)
+      event2, values2 = window2.read()
+
+      if event2 == "-ZOOM IN-":
+         print("ZOOM ZOOM ZOOM")
+         window2['-IMAGE-'].update(png_data)
+
+      if event2 == psg.WIN_CLOSED:
+         print("CLOSE")
          window2.close()
 
    if event == "-GRAYSCALE-":
@@ -61,28 +70,45 @@ while True:
       png_bio = io.BytesIO()
       file.save(png_bio, format="PNG")
       png_data = png_bio.getvalue()
-      window3 = psg.Window("Tons de Cinza", [[psg.Image(png_data, subsample=2)]], size=(720,480), finalize=True)
-      if event == psg.WIN_CLOSED:
+      window3 = psg.Window("Tons de Cinza", [[psg.Image(png_data, subsample=2, key="-IMAGE-")],
+                                             [psg.Button("Zoom In", key="-ZOOM IN-")]
+                                             ], size=(720,480), finalize=True)
+      
+      event3, values3 = window3.read()
+
+      if event3 == "-ZOOM IN-":
+         print("ZOOM ZOOM ZOOM")
+         window3['-IMAGE-'].update(png_data)
+
+      if event3 == psg.WIN_CLOSED:
+         print("CLOSE")
          window3.close()
 
    if event == "-GRAYSCALE_HISTOGRAM-": 
       img = cv2.imread(file_path,0) 
-      # img2 = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
       # calculate frequency of pixels in range 0-255 
       histogram = cv2.calcHist([img],[0],None,[256],[0,256]) 
       plt.plot(histogram) 
       plt.show() 
 
    if event == "-HSV_HISTOGRAM-": 
-      img = cv2.imread(file_path,0) 
-      img2 = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-      h, s, v = img2[:,:,0], img2[:,:,1], img2[:,:,2]
-      hist_h = cv2.calcHist([h],[0],None,[256],[0,256])
-      #hist_s = cv2.calcHist([s],[0],None,[256],[0,256])
-      #hist_v = cv2.calcHist([v],[0],None,[256],[0,256])
-      plt.plot(hist_h, color='r', label="hue")
 
+      # img = cv2.imread(file_path,0) 
+      # img2 = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+      # h, s, v = img2[:,:,0], img2[:,:,1], img2[:,:,2]
+      # hist_h = cv2.calcHist([h],[0],None,[256],[0,256])
+      # #hist_s = cv2.calcHist([s],[0],None,[256],[0,256])
+      # #hist_v = cv2.calcHist([v],[0],None,[256],[0,256])
+      # plt.plot(hist_h, color='r', label="hue")
+ 
+      img = cv2.imread(file_path)
+      assert img is not None, "file could not be read, check with os.path.exists()"
+      hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+      hist = cv2.calcHist( [hsv], [0, 1], None, [180, 256], [0, 16, 0, 256] )
+      
+      plt.imshow(hist,interpolation = 'nearest')
+      plt.show()
+      
    if event == psg.WIN_CLOSED:
       break
 window.close()
