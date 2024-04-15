@@ -6,21 +6,17 @@ import imageio.v3 as iio
 import ipympl
 import matplotlib.pyplot as plt
 import numpy as np
-import skimage as ski
+# from skimage import io, feature
+import skimage
 import cv2
-
-# layout = [[psg.Text(text='Hello World',
-#    font=('Arial Bold', 20),
-#    size=20,
-#    expand_x=True,
-#    justification='center')],
-# ]
+import scipy
 
 main_layout = [[psg.Button("Carregar Imagem", key="-LOAD-")], 
          [psg.Button("Visualizar Imagem", key="-VIEW-")],
          [psg.Button("Tons de Cinza", key="-GRAYSCALE-")],
          [psg.Button("Histograma Tons de Cinza", key="-GRAYSCALE_HISTOGRAM-")],
-         [psg.Button("Histograma HSV", key="-HSV_HISTOGRAM-")]
+         [psg.Button("Histograma HSV", key="-HSV_HISTOGRAM-")],
+         [psg.Button("Matriz de Co-ocorrencia", key="-COMATRIX-")],
 ]
 
 window = psg.Window('Processamento de Imagens', main_layout, size=(715,250))
@@ -88,10 +84,10 @@ while True:
       img = cv2.imread(file_path,0) 
       # calculate frequency of pixels in range 0-255 
       histogram = cv2.calcHist([img],[0],None,[256],[0,256]) 
-      plt.plot(histogram) 
+      plt.plot(histogram)
       plt.show() 
 
-   if event == "-HSV_HISTOGRAM-": 
+   if event == "-HSV_HISTOGRAM-":
 
       # img = cv2.imread(file_path,0) 
       # img2 = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -102,13 +98,23 @@ while True:
       # plt.plot(hist_h, color='r', label="hue")
  
       img = cv2.imread(file_path)
-      assert img is not None, "file could not be read, check with os.path.exists()"
+      assert img is not None, "file could not be read"
       hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
       hist = cv2.calcHist( [hsv], [0, 1], None, [180, 256], [0, 16, 0, 256] )
-      
       plt.imshow(hist,interpolation = 'nearest')
       plt.show()
-      
+
+   if event == "-COMATRIX-":
+      gray_scale_img = "gray_scale.png"
+      shutil.copy(file_path, gray_scale_img)
+      file = Image.open(gray_scale_img).convert('L', colors=16)
+      file.save(gray_scale_img, "PNG")
+      img_array = np.asarray(file)
+      print("IMAGE ARRAY \n", img_array.shape)
+      glcm = skimage.feature.graycomatrix(img_array, distances=[1], angles=[0], symmetric=False, normed=False)
+      # print("CO OCURRENCE MATRIX \n", glcm[0:5, 0:5])
+
    if event == psg.WIN_CLOSED:
       break
+
 window.close()
