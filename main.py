@@ -17,6 +17,7 @@ main_layout = [[psg.Button("Carregar Imagem", key="-LOAD-")],
          [psg.Button("Histograma Tons de Cinza", key="-GRAYSCALE_HISTOGRAM-")],
          [psg.Button("Histograma HSV", key="-HSV_HISTOGRAM-")],
          [psg.Button("Matriz de Co-ocorrencia", key="-COMATRIX-")],
+         [psg.Button("Momentos Invariantes de Hu", key="-HU_MOMENTS-")],
 ]
 
 window = psg.Window('Processamento de Imagens', main_layout, size=(715,250))
@@ -110,9 +111,78 @@ while True:
       file = Image.open(gray_scale_img).convert('L', colors=16)
       file.save(gray_scale_img, "PNG")
       img_array = np.asarray(file)
-      print("IMAGE ARRAY \n", img_array.shape)
-      glcm = skimage.feature.graycomatrix(img_array, distances=[1], angles=[0], symmetric=False, normed=False)
-      # print("CO OCURRENCE MATRIX \n", glcm[0:5, 0:5])
+      # print("IMAGE ARRAY \n", img_array.shape)
+      
+      #Calcula as matrizes de Co Ocorrencia
+      #C1,1
+      glcm1 = skimage.feature.graycomatrix(img_array, distances=[1,1], angles=[3*np.pi/2], symmetric=False, normed=False)
+      # print("C1,1 \n", glcm1[0:5, 0:5])
+      #C2,2
+      glcm2 = skimage.feature.graycomatrix(img_array, distances=[2,2], angles=[3*np.pi/2], symmetric=False, normed=False)      
+      # print("C2,2 \n", glcm2[0:5, 0:5])
+      #C4,4
+      glcm4 = skimage.feature.graycomatrix(img_array, distances=[4,4], angles=[3*np.pi/2], symmetric=False, normed=False)
+      print("C4,4 \n", glcm4[0:5, 0:5])
+      #C8,8
+      glcm8 = skimage.feature.graycomatrix(img_array, distances=[8,8], angles=[3*np.pi/2], symmetric=False, normed=False)
+      #C16,16
+      glcm16 = skimage.feature.graycomatrix(img_array, distances=[16,16], angles=[3*np.pi/2], symmetric=False, normed=False)
+      #C32,32
+      glcm32 = skimage.feature.graycomatrix(img_array, distances=[32,32], angles=[3*np.pi/2], symmetric=False, normed=False)
+
+      #Calcular a Entropia 
+      entropy1 = skimage.measure.shannon_entropy(glcm1)
+      # print("Entropy 1,1 ",entropy1)
+      entropy2 = skimage.measure.shannon_entropy(glcm2)
+      # print("Entropy 2,2 ",entropy2)
+      entropy4 = skimage.measure.shannon_entropy(glcm4)
+      entropy8 = skimage.measure.shannon_entropy(glcm8)
+      entropy16 = skimage.measure.shannon_entropy(glcm16)
+      entropy32 = skimage.measure.shannon_entropy(glcm32)
+
+      #Calcular a Homogeneidade
+      homogeneity1 = skimage.feature.graycoprops(glcm1, 'homogeneity')
+      # print("HOMOGENEITY1,1 ", homogeneity1)
+      homogeneity2 = skimage.feature.graycoprops(glcm2, 'homogeneity')
+      homogeneity4 = skimage.feature.graycoprops(glcm2, 'homogeneity')
+      homogeneity8 = skimage.feature.graycoprops(glcm8, 'homogeneity')
+      homogeneity16 = skimage.feature.graycoprops(glcm16, 'homogeneity')
+      homogeneity32 = skimage.feature.graycoprops(glcm32, 'homogeneity')
+
+      #Calcular o Contraste
+      contrast1 = skimage.feature.graycoprops(glcm1, 'contrast')
+      # print("CONTRAST1,1 ", contrast1)
+      contrast2 = skimage.feature.graycoprops(glcm2, 'contrast')
+      contrast4 = skimage.feature.graycoprops(glcm4, 'contrast')
+      contrast8 = skimage.feature.graycoprops(glcm8, 'contrast')
+      contrast16 = skimage.feature.graycoprops(glcm16, 'contrast')
+      contrast32 = skimage.feature.graycoprops(glcm32, 'contrast')
+
+   if event == "-HU_MOMENTS-":
+      img = cv2.imread(file_path)
+      gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+      # apply thresholding on gray image
+      ret,thresh = cv2.threshold(gray,150,255,0)
+
+      # Find the contours in the image
+      contours,hierarchy = cv2.findContours(thresh, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+      print("Number of Contours detected:",len(contours))
+
+      # Find the moments of first contour
+      cnt = contours[0]
+      M = cv2.moments(cnt)
+      Hm = cv2.HuMoments(M)
+
+      # Draw the contour
+      cv2.drawContours(img, [cnt], -1, (0,255,255), 3)
+      x1, y1 = cnt[0,0]
+      cv2.putText(img, 'Contour:1', (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+      # print the moments of the first contour
+      print("Hu-Moments of first contour:\n", Hm)
+      cv2.imshow("Hu-Moments", img)
+      cv2.waitKey(0)
+      cv2.destroyAllWindows()
 
    if event == psg.WIN_CLOSED:
       break
