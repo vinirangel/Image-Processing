@@ -161,25 +161,19 @@ while True:
    if event == "-HU_MOMENTS-":
       img = cv2.imread(file_path)
       gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-      # apply thresholding on gray image
-      ret,thresh = cv2.threshold(gray,150,255,0)
-
-      # Find the contours in the image
+      ret,thresh = cv2.threshold(gray,170,255,0)
       contours,hierarchy = cv2.findContours(thresh, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-      print("Number of Contours detected:",len(contours))
+      print("Number of contours detected:",len(contours))
 
-      # Find the moments of first contour
-      cnt = contours[0]
-      M = cv2.moments(cnt)
-      Hm = cv2.HuMoments(M)
+      # compute HuMoments for all the contours detected in the image
+      for i, cnt in enumerate(contours):
+         x,y = cnt[0,0]
+         moments = cv2.moments(cnt)
+         hm = cv2.HuMoments(moments)
+         cv2.drawContours(img, [cnt], -1, (0,255,255), 3)
+         cv2.putText(img, f'Contour {i+1}', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+         print(f"\nHuMoments for Contour {i+1}:\n", hm)
 
-      # Draw the contour
-      cv2.drawContours(img, [cnt], -1, (0,255,255), 3)
-      x1, y1 = cnt[0,0]
-      cv2.putText(img, 'Contour:1', (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
-      # print the moments of the first contour
-      print("Hu-Moments of first contour:\n", Hm)
       cv2.imshow("Hu-Moments", img)
       cv2.waitKey(0)
       cv2.destroyAllWindows()
