@@ -16,7 +16,7 @@ import xgboost as xgb
 import seaborn as sns
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn import preprocessing
 
 # dataset = np.loadtxt('classifications.csv', delimiter=",")
@@ -30,9 +30,9 @@ from sklearn import preprocessing
 # test_size = 0.33
 # X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=test_size, random_state=seed)
 
-main_layout = [[psg.Button("Carregar Imagem", key="-LOAD-"), psg.VerticalSeparator(pad=10, color="gray"), psg.Button("Classificador XGBoost", key="-XGBOOST-")], 
-         [psg.Button("Visualizar Imagem", key="-VIEW-")],
-         [psg.Button("Tons de Cinza", key="-GRAYSCALE-")],
+main_layout = [[psg.Button("Carregar Imagem", key="-LOAD-"), psg.VerticalSeparator(pad=10, color="gray"), psg.Button("Classificação Binaria com XGBoost", key="-XGBOOST_BINARY-")], 
+         [psg.Button("Visualizar Imagem", key="-VIEW-"), psg.VerticalSeparator(pad=8, color="gray"), psg.Button("Classificação XGBoost com 6 Classes", key="-XGBOOST_TRAINING-")],
+         [psg.Button("Tons de Cinza", key="-GRAYSCALE-"), psg.VerticalSeparator(pad=8, color="gray"), psg.Button("Prever com o Classificador XGBoost", key="-XGBOOST_PREDICT-")],
          [psg.Button("Histograma Tons de Cinza", key="-GRAYSCALE_HISTOGRAM-")],
          [psg.Button("Histograma HSV", key="-HSV_HISTOGRAM-")],
          [psg.Button("Matriz de Co-ocorrencia", key="-COMATRIX-")],
@@ -45,7 +45,13 @@ window = psg.Window('Processamento de Imagens', main_layout, size=(715,250))
 
 file = "EMPTY"
 # file_path = "/home/vinicius/Desktop/PI/sample.jpg"
-file_path = "C:/Users/Vinicius/Desktop/CS Files/PI/sample.jpg"
+# file_path = "C:/Users/Vinicius/Desktop/CS Files/PI/sample.jpg"
+file_path = "C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Validation/ASC-H/816.png"
+train_predictions = ""
+val_predictions = ""
+train_images = ""
+test_images = ""
+model = ""
 
 # train_images = []
 # train_labels = []
@@ -293,32 +299,125 @@ while True:
          moments = cv2.moments(cnt)
          hm = cv2.HuMoments(moments)
          cv2.drawContours(img, [cnt], -1, (0,255,255), 3)
-         cv2.putText(img, f'Contour {i+1}', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+         # cv2.putText(img, f'Contour {i+1}', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
          print(f"\nHuMoments for Contour {i+1}:\n", hm)
 
       cv2.imshow("Hu-Moments", img)
       cv2.waitKey(0)
       cv2.destroyAllWindows()
 
-   if event == "-XGBOOST-":
-      img = cv2.imread(file_path)
-      assert img is not None, "file could not be read"
-      hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-      hbins = 16 
-      vbins = 8
-      histSize = {hbins, vbins}
-      hist = cv2.calcHist( [hsv], [0, 2], None, [16, 8], [0, 180, 0, 256] )
-      # print(hist)
-
-      hbins = 16 
-      vbins = 8
-      histSize = {hbins, vbins}
-
+   if event == "-XGBOOST_BINARY-":
+      # Treinamento Binario
+      
       train_images = []
       train_labels = []
+      classes = ["Negative", "Other"]
+
+      # for directory_path in glob.glob("C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Training/*"):
+      # label = "Negative for intraepithelial lesion"
+      # classes.append("Negative for intraepithelial lesion")
+      # classes.append("Other")
+      for directory_path in glob.glob("C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Training/*"):
+         label = directory_path.split("\\")[-1]
+         # print(label)
+         for img_path in glob.glob(os.path.join(directory_path, "*png")):
+            print(img_path)
+            img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+            img = cv2.resize(img, (100,100))
+            hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+            hist = cv2.calcHist( [hsv], [0, 2], None, [16, 8], [0, 180, 0, 256] )
+            # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            train_images.append(hist)
+            if "Negative for intraepithelial lesion" in label:
+               train_labels.append(label)
+            else:
+               train_labels.append("Other")
+
+      train_images = np.array(train_images)
+      train_labels = np.array(train_labels)
+
+      test_images = []
+      test_labels = []
+
+      for directory_path in glob.glob("C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Validation/*"):
+         label = directory_path.split("\\")[-1]
+         # print(label)
+         for img_path in glob.glob(os.path.join(directory_path, "*png")):
+            print(img_path)
+            img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+            img = cv2.resize(img, (100,100))
+            hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+            hist = cv2.calcHist( [hsv], [0, 2], None, [16, 8], [0, 180, 0, 256] )
+            # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            test_images.append(hist)
+            if "Negative for intraepithelial lesion" in label:
+               test_labels.append(label)
+            else:
+               test_labels.append("Other")
+
+      test_images = np.array(test_images)
+      test_labels = np.array(test_labels)
+
+      #Encode labels from test to integers
+      le = preprocessing.LabelEncoder()
+      le.fit(test_labels)
+      test_labels_encoded = le.transform(test_labels)
+      le.fit(train_labels)
+      train_labels_encoded = le.transform(train_labels)
+
+      # print("TRAIN LABELS:", train_labels_encoded)
+      # print("TEST LABELS:", test_labels_encoded)
+
+      base_model = tf.keras.applications.VGG16(include_top=False,
+                                                     weights='imagenet')
+      base_model.trainable = False
+      base_model.summary()
+
+      train_images = train_images.reshape(train_images.shape[0], -1)
+      test_images = test_images.reshape(test_images.shape[0], -1)
+
+      # model = xgb.XGBClassifier(learning_rate=0.1, n_estimators=120)
+      model = xgb.XGBClassifier(objective='binary:logistic')
+
+      # eval_set = [(train_images, train_labels_encoded), (test_images, test_labels_encoded)]
+
+      model.fit(
+          train_images,
+          train_labels_encoded,  
+          verbose=True
+      )
+
+      accuracy = model.score(test_images, test_labels_encoded)
+      print("Accuracy: %.2f%%" % (accuracy * 100.0))
+
+      train_predictions = model.predict(train_images)
+      val_predictions = model.predict(test_images)
+
+      print ("Training Accuracy = ", accuracy_score(train_labels_encoded, train_predictions))
+      print ("Validation Accuracy = ", accuracy_score(test_labels_encoded, val_predictions))
+
+      cf = tf.math.confusion_matrix(labels=test_labels_encoded, predictions=val_predictions).numpy()
+      ax = plt.subplot()
+      sns.heatmap(cf, annot=True, fmt='g', ax=ax)
+      ax.set_title('Confusion Matrix')
+      ax.set_xlabel('Predicted labels')
+      ax.set_ylabel('True labels')
+      ax.xaxis.set_ticklabels(classes) 
+      ax.yaxis.set_ticklabels(classes)
+      plt.xticks(rotation = 90)
+      plt.yticks(rotation = 360)
+
+      plt.show()
+
+   if event == "-XGBOOST_TRAINING-":      
+      # Treinamento com as 6 classes
+      train_images = []
+      train_labels = []
+      classes = []
 
       for directory_path in glob.glob("C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Training/*"):
          label = directory_path.split("\\")[-1]
+         classes.append(directory_path.split("\\")[-1])
          # print(label)
          for img_path in glob.glob(os.path.join(directory_path, "*png")):
             print(img_path)
@@ -372,7 +471,8 @@ while True:
       train_images = train_images.reshape(train_images.shape[0], -1)
       test_images = test_images.reshape(test_images.shape[0], -1)
 
-      model = xgb.XGBClassifier(learning_rate=0.1, n_estimators=120)
+      # model = xgb.XGBClassifier(learning_rate=0.1, n_estimators=120)
+      model = xgb.XGBClassifier()
 
       # eval_set = [(train_features, train_labels_encoded), (val_features, test_labels_encoded)]
       eval_set = [(train_images, train_labels_encoded), (test_images, test_labels_encoded)]
@@ -415,19 +515,58 @@ while True:
       plt.ylabel('merror')
       plt.ylabel('Number of Trees')
 
-      plt.show()
-
-      # train_predictions = model.predict(train_features)
-      # val_predictions = model.predict(val_features)
-
-      # print ("Training Accuracy = ", accuracy_score(train_labels_encoded, train_predictions))
-      # print ("Validation Accuracy = ", accuracy_score(test_labels_encoded, val_predictions))
+      # plt.show()
 
       train_predictions = model.predict(train_images)
       val_predictions = model.predict(test_images)
 
       print ("Training Accuracy = ", accuracy_score(train_labels_encoded, train_predictions))
       print ("Validation Accuracy = ", accuracy_score(test_labels_encoded, val_predictions))
+      
+      # cm = confusion_matrix(test_labels_encoded, val_predictions)
+      # plt.figure(figsize = (10,8))
+      # sns.heatmap(cm, annot=True)
+      # plt.show()
+
+      cf = tf.math.confusion_matrix(labels=test_labels_encoded, predictions=val_predictions).numpy()
+      ax = plt.subplot()
+      sns.heatmap(cf, annot=True, fmt='g', ax=ax)
+      ax.set_title('Confusion Matrix')
+      ax.set_xlabel('Predicted labels')
+      ax.set_ylabel('True labels')
+      ax.xaxis.set_ticklabels(classes) 
+      ax.yaxis.set_ticklabels(classes)
+      plt.xticks(rotation = 90)
+      plt.yticks(rotation = 360)
+
+      plt.show()
+
+   if event == "-XGBOOST_PREDICT-":
+      print(file_path)
+
+      img = cv2.imread(file_path, cv2.IMREAD_COLOR)
+      img = cv2.resize(img, (100,100))
+      hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+      hist = cv2.calcHist( [hsv], [0, 2], None, [16, 8], [0, 180, 0, 256] )
+      validation_images = np.array(hist)
+      # print("BEFORE: ", hist)
+      validation_images = np.expand_dims(hist, axis=0) #Expand dims so the input is (num images, x, y, c)
+      # print("AFTER: ", test_images)
+      # le = preprocessing.LabelEncoder()
+      # le.fit(test_labels)
+      # test_labels_encoded = le.transform(test_labels)
+      validation_images = validation_images.reshape(validation_images.shape[0], -1)
+
+      val_prediction = model.predict(validation_images)
+      prediction = le.inverse_transform([val_prediction])
+
+      # input_img = np.expand_dims(file_path, axis=0)
+      # input_img_feature=VGG_model.predict(input_img)
+      # input_img_features=input_img_feature.reshape(input_img_feature.shape[0], -1)
+      # prediction = model.predict(input_img)
+      # prediction = le.inverse_transform([prediction])
+      print("The prediction for this image is: ", prediction)
+      print("The actual label for this image is: ", file_path)      
 
    if event == psg.WIN_CLOSED:
       break
