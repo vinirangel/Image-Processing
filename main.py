@@ -13,29 +13,25 @@ import cv2
 import os
 import scipy
 import xgboost as xgb
+from keras.applications import EfficientNetB0
 import seaborn as sns
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn import preprocessing
-
-# dataset = np.loadtxt('classifications.csv', delimiter=",")
-# # split data into X and y
-# X = dataset[:,0:8]
-# Y = dataset[:,8]
-# X.view
-
-# # split data into train and test sets
-# seed = 7
-# test_size = 0.33
-# X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=test_size, random_state=seed)
+# from keras.preprocessing.image import ImageDataGenerator
+from keras.src.legacy.preprocessing.image import ImageDataGenerator
+from keras.layers import Dense
+from keras.optimizers import Adam
+from keras.models import Sequential
+from tensorflow import keras
 
 main_layout = [[psg.Button("Carregar Imagem", key="-LOAD-"), psg.VerticalSeparator(pad=10, color="gray"), psg.Button("Classificação Binaria com XGBoost", key="-XGBOOST_BINARY-")], 
          [psg.Button("Visualizar Imagem", key="-VIEW-"), psg.VerticalSeparator(pad=8, color="gray"), psg.Button("Classificação XGBoost com 6 Classes", key="-XGBOOST_TRAINING-")],
          [psg.Button("Tons de Cinza", key="-GRAYSCALE-"), psg.VerticalSeparator(pad=8, color="gray"), psg.Button("Prever com o Classificador XGBoost", key="-XGBOOST_PREDICT-")],
-         [psg.Button("Histograma Tons de Cinza", key="-GRAYSCALE_HISTOGRAM-")],
-         [psg.Button("Histograma HSV", key="-HSV_HISTOGRAM-")],
-         [psg.Button("Matriz de Co-ocorrencia", key="-COMATRIX-")],
+         [psg.Button("Histograma Tons de Cinza", key="-GRAYSCALE_HISTOGRAM-"),  psg.VerticalSeparator(pad=8, color="gray"), psg.Button("Classificação Binaria com EfficientNet", key="-EFFICIENTNET_BINARY-")],
+         [psg.Button("Histograma HSV", key="-HSV_HISTOGRAM-"), psg.VerticalSeparator(pad=8, color="gray"), psg.Button("Classificação EfficientNet com 6 Classes", key="-EFFICIENTNET_TRAINING-")],
+         [psg.Button("Matriz de Co-ocorrencia", key="-COMATRIX-"), psg.VerticalSeparator(pad=8, color="gray"), psg.Button("Prever com o Classificador EfficientNet", key="-EFFICIENTNET_PREDICT-")],
          [psg.Button("Momentos Invariantes de Hu", key="-HU_MOMENTS-")],
 ]
 
@@ -52,108 +48,6 @@ val_predictions = ""
 train_images = ""
 test_images = ""
 model = ""
-
-# train_images = []
-# train_labels = []
-
-# for directory_path in glob.glob("C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Training/*"):
-#    label = directory_path.split("\\")[-1]
-#    # print(label)
-#    for img_path in glob.glob(os.path.join(directory_path, "*png")):
-#       print(img_path)
-#       img = cv2.imread(img_path)
-#       img = cv2.resize(img, (100,100))
-#       # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-#       train_images.append(img)
-#       train_labels.append(label)
-
-# train_images = np.array(train_images)
-# train_labels = np.array(train_labels)
-
-# test_images = []
-# test_labels = []
-
-# for directory_path in glob.glob("C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Validation/*"):
-#    label = directory_path.split("\\")[-1]
-#    # print(label)
-#    for img_path in glob.glob(os.path.join(directory_path, "*png")):
-#       print(img_path)
-#       img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-#       img = cv2.resize(img, (100,100))
-#       # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-#       test_images.append(img)
-#       test_labels.append(label)
-
-# test_images = np.array(test_images)
-# test_labels = np.array(test_labels)
-
-# #Encode labels from test to integers
-# le = preprocessing.LabelEncoder()
-# le.fit(test_labels)
-# test_labels_encoded = le.transform(test_labels)
-# le.fit(train_labels)
-# train_labels_encoded = le.transform(train_labels)
-
-# base_model = tf.keras.applications.VGG16(include_top=False,
-#                                                weights='imagenet')
-# base_model.trainable = False
-# base_model.summary()
-
-# train_features = base_model.predict(train_images)
-# train_features = train_features.reshape(train_features.shape[0], -1)
-# val_features = base_model.predict(test_images)
-# val_features = val_features.reshape(val_features.shape[0], -1)
-
-# model = xgb.XGBClassifier(learning_rate=0.1, n_estimators=120)
-
-# # eval_set = [(train_features, train_labels_encoded), (val_features, test_labels_encoded)]
-# eval_set = [(train_features, train_labels_encoded), (val_features, test_labels_encoded)]
-
-# model.fit(
-#     train_features, 
-#     train_labels_encoded,  
-#     eval_metric=["merror"], 
-#     eval_set=eval_set, 
-#     verbose=True
-# )
-
-# results = model.evals_result()
-
-# train_error = results['validation_0']['merror']
-# train_acc = [1.0 - i for i in train_error]
-
-# val_error = results['validation_1']['merror']
-# val_acc = [1.0 - i for i in val_error]
-
-# # best_ntree_limit = model.best_ntree_limit()
-# # print('Best ntree limit: ', best_ntree_limit)
-
-# plt.figure(figsize=(8, 8))
-# plt.subplot(2, 1, 1)
-# plt.plot(train_acc, label='Train Accuracy')
-# plt.plot(val_acc, label='Validation Accuracy')
-# plt.legend(loc='lower right')
-# plt.ylabel('Accuracy')
-# plt.ylim([0.3,1.1])
-# # plt.axvline(best_ntree_limit-1, color="gray", label="Optimal tree number")
-# plt.title('Training and Validation Accuracy')
-
-# plt.subplot(2, 1, 2)
-# plt.plot(train_error, label='Training Loss')
-# plt.plot(val_error, label='Validation Loss')
-# plt.legend()
-# plt.title('Training and Validation Loss')
-# # plt.axvline(best_ntree_limit-1, color="gray", label="Optimal tree number")
-# plt.ylabel('merror')
-# plt.ylabel('Number of Trees')
-
-# plt.show()
-
-# train_predictions = model.predict(train_features)
-# val_predictions = model.predict(val_features)
-
-# print ("Training Accuracy = ", accuracy_score(train_labels_encoded, train_predictions))
-# print ("Validation Accuracy = ", accuracy_score(test_labels_encoded, val_predictions))
 
 while True:
    event, values = window.read()
@@ -409,7 +303,7 @@ while True:
 
       plt.show()
 
-   if event == "-XGBOOST_TRAINING-":      
+   if event == "-XGBOOST_TRAINING-":
       # Treinamento com as 6 classes
       train_images = []
       train_labels = []
@@ -567,6 +461,314 @@ while True:
       # prediction = le.inverse_transform([prediction])
       print("The prediction for this image is: ", prediction)
       print("The actual label for this image is: ", file_path)      
+
+   if event == "-EFFICIENTNET_BINARY-":
+      train_images = []
+      train_labels = []
+      classes = ["Negative", "Other"]
+
+      # for directory_path in glob.glob("C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Training/*"):
+      # label = "Negative for intraepithelial lesion"
+      # classes.append("Negative for intraepithelial lesion")
+      # classes.append("Other")
+      for directory_path in glob.glob("C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Training/*"):
+         label = directory_path.split("\\")[-1]
+         # print(label)
+         for img_path in glob.glob(os.path.join(directory_path, "*png")):
+            print(img_path)
+            img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+            img = cv2.resize(img, (100,100))
+            # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            train_images.append(img)
+            if "Negative for intraepithelial lesion" in label:
+               train_labels.append(label)
+            else:
+               train_labels.append("Other")
+
+      train_images = np.array(train_images)
+      train_labels = np.array(train_labels)
+
+      test_images = []
+      test_labels = []
+
+      for directory_path in glob.glob("C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Validation/*"):
+         label = directory_path.split("\\")[-1]
+         # print(label)
+         for img_path in glob.glob(os.path.join(directory_path, "*png")):
+            print(img_path)
+            img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+            img = cv2.resize(img, (100,100))
+            # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            test_images.append(img)
+            if "Negative for intraepithelial lesion" in label:
+               test_labels.append(label)
+            else:
+               test_labels.append("Other")
+
+      test_images = np.array(test_images)
+      test_labels = np.array(test_labels)
+
+      #Encode labels from test to integers
+      le = preprocessing.LabelEncoder()
+      le.fit(test_labels)
+      test_labels_encoded = le.transform(test_labels)
+      le.fit(train_labels)
+      train_labels_encoded = le.transform(train_labels)
+
+      train_datagen = ImageDataGenerator(
+         rescale=1.0/255.0,      # Rescale pixel values to [0, 1]
+         rotation_range=25,      # Randomly rotate images by up to 25 degrees
+         width_shift_range=0.3,  # Randomly shift the width of images
+         height_shift_range=0.3, # Randomly shift the height of images
+         horizontal_flip=True,   # Randomly flip images horizontally
+         shear_range=0.3,        # Apply shear transformations
+         zoom_range=0.4,         # Randomly zoom into images
+         fill_mode='nearest'     # Fill empty pixels with the nearest value
+      )
+
+      test_datagen = ImageDataGenerator(rescale = 1.0 / 255)
+      # Create data generators for training and validation data
+      batch_size = 32
+      image_size = (100, 100)
+
+      train_generator = train_datagen.flow_from_directory(
+         'C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Training/',
+         target_size=image_size,
+         batch_size=batch_size,
+         class_mode='categorical'
+      )
+
+      val_generator = test_datagen.flow_from_directory(
+         'C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Validation/',
+         target_size=image_size,
+         batch_size=batch_size,
+         class_mode='categorical'
+      )
+
+      efficient_net = EfficientNetB0(
+         weights='imagenet',
+         # input_shape=(266,16,8),
+         include_top=False,
+         pooling='max',
+         classes=2
+      )
+
+      model = Sequential([
+         efficient_net,
+         keras.layers.Flatten(),  # Add a Flatten layer to reshape the output
+         keras.layers.Dense(512, activation='relu'),
+         keras.layers.BatchNormalization(),  
+         keras.layers.Dropout(0.5),  
+         keras.layers.Dense(256, activation='relu'),
+         keras.layers.BatchNormalization(),  
+         keras.layers.Dropout(0.3),
+         keras.layers.Dense(128, activation='relu'),
+         keras.layers.BatchNormalization(),
+         keras.layers.Dropout(0.3),
+         keras.layers.Dense(6, activation='softmax'),
+      ])
+
+      model.build((None, image_size[0], image_size[1], 3))
+    
+      lr_schedule = keras.optimizers.schedules.ExponentialDecay(5e-4, decay_steps=10000, decay_rate=0.9)
+
+      model.compile(optimizer=keras.optimizers.Adam(learning_rate=lr_schedule),
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
+
+      early_stopping = keras.callbacks.EarlyStopping( monitor='val_accuracy',patience=5,restore_best_weights=True)
+
+      history = model.fit(train_generator, 
+                           epochs=10, 
+                           steps_per_epoch=10,
+                           validation_data=val_generator, 
+                           callbacks=[early_stopping])
+
+      plt.plot(history.history["accuracy"])
+      plt.plot(history.history["val_accuracy"])
+      plt.title("model accuracy")
+      plt.ylabel("accuracy")
+      plt.xlabel("epoch")
+      plt.legend(["train", "validation"], loc="upper left")
+      plt.show()
+
+      predictions = model.predict(val_generator)
+      loss, accuracy = model.evaluate(val_generator)
+      print(f'Test loss: {loss:.4f}, accuracy: {accuracy:.4f}')
+
+      true_labels = val_generator.classes
+      class_names = list(val_generator.class_indices.keys())
+
+      # Calculate the confusion matrix
+      confusion = confusion_matrix(true_labels, np.argmax(predictions, axis=-1))
+
+      # Plot the confusion matrix
+      plt.figure(figsize=(8, 6))
+      sns.heatmap(confusion, annot=True, fmt="d", cmap="Blues", cbar=False, xticklabels=class_names, yticklabels=class_names)
+      plt.xlabel("Predicted Labels")
+      plt.ylabel("True Labels")
+      plt.title("Confusion Matrix")
+      plt.show()
+
+   if event == "-EFFICIENTNET_TRAINING-":
+      train_images = []
+      train_labels = []
+      classes = []
+      labels = ['ASC-H','ASC-US','HSIL','LSIL','Negative for intraepithelial lesion',' SCC']
+
+      for directory_path in glob.glob("C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Training/*"):
+         label = directory_path.split("\\")[-1]
+         classes.append(directory_path.split("\\")[-1])
+         # print(label)
+         for img_path in glob.glob(os.path.join(directory_path, "*png")):
+            print(img_path)
+            img = cv2.imread(img_path)
+            img = cv2.resize(img, (100,100))
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            train_images.append(img)
+            train_labels.append(label)
+
+      train_images = np.array(train_images)
+      train_labels = np.array(train_labels)
+
+      test_images = []
+      test_labels = []
+
+      for directory_path in glob.glob("C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Validation/*"):
+         label = directory_path.split("\\")[-1]
+         # print(label)
+         for img_path in glob.glob(os.path.join(directory_path, "*png")):
+            print(img_path)
+            img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+            img = cv2.resize(img, (100,100))
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            test_images.append(img)
+            test_labels.append(label)
+
+      test_images = np.array(test_images)
+      test_labels = np.array(test_labels)
+
+      #Encode labels from test to integers
+      le = preprocessing.LabelEncoder()
+      le.fit(test_labels)
+      test_labels_encoded = le.transform(test_labels)
+      le.fit(train_labels)
+      train_labels_encoded = le.transform(train_labels)
+
+      train_datagen = ImageDataGenerator(
+         rescale=1.0/255.0,      # Rescale pixel values to [0, 1]
+         rotation_range=25,      # Randomly rotate images by up to 25 degrees
+         width_shift_range=0.3,  # Randomly shift the width of images
+         height_shift_range=0.3, # Randomly shift the height of images
+         horizontal_flip=True,   # Randomly flip images horizontally
+         shear_range=0.3,        # Apply shear transformations
+         zoom_range=0.4,         # Randomly zoom into images
+         fill_mode='nearest'     # Fill empty pixels with the nearest value
+      )
+
+      test_datagen = ImageDataGenerator(rescale = 1.0 / 255)
+      # Create data generators for training and validation data
+      batch_size = 32
+      image_size = (100, 100)
+
+      train_generator = train_datagen.flow_from_directory(
+         'C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Training/',
+         target_size=image_size,
+         batch_size=batch_size,
+         class_mode='categorical',
+         shuffle=True
+      )
+
+      val_generator = test_datagen.flow_from_directory(
+         'C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Validation/',
+         target_size=image_size,
+         batch_size=batch_size,
+         class_mode='categorical',
+         shuffle=True
+      )
+
+      efficient_net = EfficientNetB0(
+         weights='imagenet',
+         # input_shape=(266,16,8),
+         include_top=False,
+         pooling='max',
+         classes=6
+      )
+
+      model = Sequential()
+      model.add(efficient_net)
+      model.add(Dense(units = 6, activation='relu'))
+      model.add(Dense(units = 6, activation = 'relu'))
+      model.add(Dense(units = 6, activation='sigmoid'))
+      model.summary()
+
+      model.compile(optimizer=Adam(learning_rate=0.0001), loss='categorical_crossentropy', metrics=['accuracy'])
+
+      # history = model.fit(
+      #    x = train_images,
+      #    y = train_labels_encoded,
+      #    epochs = 3,
+      #    steps_per_epoch = 5,
+      #    validation_data = (test_images, test_labels_encoded),
+      #    validation_steps = 5
+      # )
+   
+      history = model.fit(
+         train_generator,
+         epochs = 10,
+         steps_per_epoch = 10,
+         validation_data = val_generator,
+         validation_steps = 3
+      )
+
+      plt.plot(history.history["accuracy"])
+      plt.plot(history.history["val_accuracy"])
+      plt.title("model accuracy")
+      plt.ylabel("accuracy")
+      plt.xlabel("epoch")
+      plt.legend(["train", "validation"], loc="upper left")
+      plt.show()      
+
+      predictions = model.predict(val_generator)
+      loss, accuracy = model.evaluate(val_generator)
+      print(f'Test loss: {loss:.4f}, accuracy: {accuracy:.4f}')
+
+      true_labels = val_generator.classes
+      class_names = list(val_generator.class_indices.keys())
+
+      # Calculate the confusion matrix
+      confusion = confusion_matrix(true_labels, np.argmax(predictions, axis=-1))
+
+      # Plot the confusion matrix
+      plt.figure(figsize=(8, 6))
+      sns.heatmap(confusion, annot=True, fmt="d", cmap="Blues", cbar=False, xticklabels=class_names, yticklabels=class_names)
+      plt.xlabel("Predicted Labels")
+      plt.ylabel("True Labels")
+      plt.title("Confusion Matrix")
+      plt.show()
+
+   if event == "-EFFICIENTNET_PREDICT-":
+      print(file_path)
+
+      img = cv2.imread(file_path, cv2.IMREAD_COLOR)
+      img = cv2.resize(img, (100,100))
+      validation_images = np.array(img)
+      # print("BEFORE: ", hist)
+      validation_images = np.expand_dims(img, axis=0) #Expand dims so the input is (num images, x, y, c)
+
+      pred = model(validation_images)
+      # prediction = le.inverse_transform([pred])
+
+      # val_prediction = model.predict(validation_images)
+      # prediction = le.inverse_transform([val_prediction])
+
+      # input_img = np.expand_dims(file_path, axis=0)
+      # input_img_feature=VGG_model.predict(input_img)
+      # input_img_features=input_img_feature.reshape(input_img_feature.shape[0], -1)
+      # prediction = model.predict(input_img)
+      # prediction = le.inverse_transform([prediction])
+      print("The prediction for this image is: ", pred)
+      print("The actual label for this image is: ", file_path)   
 
    if event == psg.WIN_CLOSED:
       break
