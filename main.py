@@ -63,44 +63,34 @@ while True:
       print ("File selected", file)
 
    if event == "-VIEW-":
-      file = Image.open(file_path)
-      png_bio = io.BytesIO()
-      file.save(png_bio, format="PNG")
-      png_data = png_bio.getvalue()
-      window2 = psg.Window("Visualizar Imagem", [[psg.Image(png_data, subsample=2, key="-IMAGE-")],
-                                                 [psg.Button("Zoom In", key="-ZOOM IN-")]
-                                                 ], size=(720,480), finalize=True)
-      event2, values2 = window2.read()
-
-      if event2 == "-ZOOM IN-":
-         print("ZOOM ZOOM ZOOM")
-         window2['-IMAGE-'].update(png_data)
-
-      if event2 == psg.WIN_CLOSED:
-         print("CLOSE")
-         window2.close()
+      img = plt.imread(file_path)
+      imgplot = plt.imshow(img)
+      plt.show()
 
    if event == "-GRAYSCALE-":
       gray_scale_img = "gray_scale.png"
       shutil.copy(file_path, gray_scale_img)
       file = Image.open(gray_scale_img).convert('L')
       file.save(gray_scale_img, "PNG")
-      png_bio = io.BytesIO()
-      file.save(png_bio, format="PNG")
-      png_data = png_bio.getvalue()
-      window3 = psg.Window("Tons de Cinza", [[psg.Image(png_data, subsample=2, key="-IMAGE-")],
-                                             [psg.Button("Zoom In", key="-ZOOM IN-")]
-                                             ], size=(720,480), finalize=True)
+      img = plt.imread(gray_scale_img)
+      imgplot = plt.imshow(img, cmap='gray')
+      plt.show()
+      # png_bio = io.BytesIO()
+      # file.save(png_bio, format="PNG")
+      # png_data = png_bio.getvalue()
+      # window3 = psg.Window("Tons de Cinza", [[psg.Image(png_data, subsample=2, key="-IMAGE-")],
+      #                                        [psg.Button("Zoom In", key="-ZOOM IN-")]
+      #                                        ], size=(720,480), finalize=True)
       
-      event3, values3 = window3.read()
+      # event3, values3 = window3.read()
 
-      if event3 == "-ZOOM IN-":
-         print("ZOOM ZOOM ZOOM")
-         window3['-IMAGE-'].update(png_data)
+      # if event3 == "-ZOOM IN-":
+      #    print("ZOOM ZOOM ZOOM")
+      #    window3['-IMAGE-'].update(png_data)
 
-      if event3 == psg.WIN_CLOSED:
-         print("CLOSE")
-         window3.close()
+      # if event3 == psg.WIN_CLOSED:
+      #    print("CLOSE")
+      #    window3.close()
 
    if event == "-GRAYSCALE_HISTOGRAM-": 
       img = cv2.imread(file_path,0) 
