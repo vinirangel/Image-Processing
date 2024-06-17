@@ -43,9 +43,9 @@ window = psg.Window('Processamento de Imagens', main_layout, size=(715,250))
 file = "EMPTY"
 # file_path = "/home/vinicius/Desktop/PI/sample.jpg"
 # file_path = "C:/Users/Vinicius/Desktop/CS Files/PI/sample.jpg"
-file_path = "C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Validation/ASC-H/816.png"
-training_path = "C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Training/*"
-validation_path = "C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Validation/*"
+file_path = "/home/vinicius/Desktop/PI/Image-Processing/Validation/ASC-H/816.png"
+training_path = "/home/vinicius/Desktop/PI/Image-Processing/Training/*"
+validation_path = "/home/vinicius/Desktop/PI/Image-Processing/Validation/*"
 train_predictions = ""
 val_predictions = ""
 train_images = ""
@@ -366,7 +366,7 @@ while True:
       plt.ylabel('merror')
       plt.ylabel('Number of Trees')
 
-      # plt.show()
+      plt.show()
 
       train_predictions = model.predict(train_images)
       val_predictions = model.predict(test_images)
@@ -472,14 +472,14 @@ while True:
       image_size = (100, 100)
 
       train_generator = train_datagen.flow_from_directory(
-         'C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Training/',
+         '/home/vinicius/Desktop/PI/Image-Processing/Training/',
          target_size=image_size,
          batch_size=batch_size,
          class_mode='categorical'
       )
 
       val_generator = test_datagen.flow_from_directory(
-         'C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Validation/',
+         '/home/vinicius/Desktop/PI/Image-Processing/Validation/',
          target_size=image_size,
          batch_size=batch_size,
          class_mode='categorical'
@@ -616,7 +616,7 @@ while True:
       image_size = (100, 100)
 
       train_generator = train_datagen.flow_from_directory(
-         'C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Training/',
+         '/home/vinicius/Desktop/PI/Image-Processing/Training/',
          target_size=image_size,
          batch_size=batch_size,
          class_mode='categorical',
@@ -624,7 +624,7 @@ while True:
       )
 
       val_generator = test_datagen.flow_from_directory(
-         'C:/Users/Vinicius/Desktop/CS Files/PI/Image-Processing/Validation/',
+         '/home/vinicius/Desktop/PI/Image-Processing/Validation/',
          target_size=image_size,
          batch_size=batch_size,
          class_mode='categorical',
@@ -660,8 +660,8 @@ while True:
       history = model.fit(
          train_generator,
          batch_size=1000,
-         epochs = 10,
-         steps_per_epoch = 10,
+         epochs = 1,
+         steps_per_epoch = 1,
          validation_data = val_generator,
          # validation_steps = 3,
          class_weight = class_weights,
